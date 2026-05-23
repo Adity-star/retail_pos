@@ -58,12 +58,20 @@ export async function POST(request: NextRequest) {
     }
 
     // Update last login
-    await db.user.update({
-      where: { id: user.id },
-      data: { lastLoginAt: new Date() },
-    });
+     await db.user.update({
+       where: { id: user.id },
+       data: { lastLoginAt: new Date() },
+     });
 
-    return NextResponse.json({
+     // Update Supabase user metadata with tenant_id and role
+     await supabase.auth.updateUser({
+       data: {
+         tenant_id: user.tenantId,
+         role: user.role,
+       },
+     });
+
+     return NextResponse.json({
       success: true,
       user: {
         id: user.id,

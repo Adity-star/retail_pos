@@ -8,6 +8,8 @@ export async function getTenantContext() {
   const tenantId = headersList.get('x-tenant-id');
   const userId = headersList.get('x-user-id');
   const userRole = headersList.get('x-user-role');
+
+  console.log('[getTenantContext] Headers:', { tenantId, userId, userRole });
   
   if (!tenantId || !userId) {
     throw new Error('No tenant context found');
