@@ -4,7 +4,6 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { signIn } from '@/lib/auth-client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -22,13 +21,21 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      const result = await signIn.email({
-        email,
-        password,
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: email.toLowerCase(),
+          password,
+        }),
       });
 
-      if (result.error) {
-        toast.error(result.error.message || 'Login failed');
+      const data = await response.json();
+
+      if (!response.ok) {
+        toast.error(data.error || 'Login failed');
       } else {
         toast.success('Login successful!');
         router.push('/dashboard');
@@ -47,11 +54,11 @@ export default function LoginPage() {
         <CardHeader className="space-y-1">
           <div className="flex items-center justify-center mb-4">
             <div className="w-12 h-12 bg-blue-600 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-xl">JU</span>
+              <span className="text-white font-bold text-xl">RP</span>
             </div>
           </div>
           <CardTitle className="text-2xl font-bold text-center">
-            Just Uniform ERP
+            Retail POS System
           </CardTitle>
           <CardDescription className="text-center">
             Enter your credentials to access your account

@@ -1,45 +1,65 @@
-// src/middleware.ts
-
-import { NextResponse } from 'next/server';
-import type { NextRequest } from 'next/server';
-import { auth } from './lib/auth';
+import { createServerClient } from "@supabase/ssr";
+import { NextResponse, type NextRequest } from "next/server";
 
 export async function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl;
-  
-  // Public routes
-  const publicRoutes = ['/login', '/signup', '/api/auth'];
-  const isPublicRoute = publicRoutes.some(route => pathname.startsWith(route));
-  
-  if (isPublicRoute) {
-    return NextResponse.next();
-  }
-  
-  // Check authentication
-  const session = await auth.api.getSession({
-    headers: request.headers
+  const supabaseResponse = NextResponse.next({
+    request,
   });
-  
-  if (!session) {
-    return NextResponse.redirect(new URL('/login', request.url));
+
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return request.cookies.getAll();
+        },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value, options }) => {
+            request.cookies.set(name, value);
+            supabaseResponse.cookies.set(name, value, options);
+          });
+        },
+      },
+    }
+  );
+
+  // Refresh session automatically
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  const pathname = request.nextUrl.pathname;
+
+  // Auth routes
+  const authRoutes = ["/login"];
+  const isAuthRoute = authRoutes.some((route) => pathname.startsWith(route));
+
+  // Protected routes
+  const protectedRoutes = ["/dashboard"];
+  const isProtectedRoute = protectedRoutes.some((route) =>
+    pathname.startsWith(route)
+  );
+
+  // Redirect to login if not authenticated and trying to access protected route
+  if (!user && isProtectedRoute) {
+    const redirectUrl = new URL("/login", request.url);
+    return NextResponse.redirect(redirectUrl);
   }
-  
-  // Check if user is active
-  if (!session.user.isActive) {
-    return NextResponse.redirect(new URL('/account-disabled', request.url));
+
+  // Redirect to dashboard if authenticated and trying to access login
+  if (user && isAuthRoute) {
+    const redirectUrl = new URL("/dashboard", request.url);
+    return NextResponse.redirect(redirectUrl);
   }
-  
-  // Add tenant context to headers
-  const response = NextResponse.next();
-  response.headers.set('x-tenant-id', session.user.tenantId);
-  response.headers.set('x-user-id', session.user.id);
-  response.headers.set('x-user-role', session.user.role);
-  
-  return response;
+
+  return supabaseResponse;
 }
 
 export const config = {
   matcher: [
-    '/((?!_next/static|_next/image|favicon.ico).*)',
+    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    "/login",
+    "/dashboard/:path*",
   ],
 };

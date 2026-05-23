@@ -10,17 +10,18 @@
     "db:push": "prisma db push",
     "db:migrate": "prisma migrate dev",
     "db:seed": "tsx prisma/seed.ts",
-    "db:studio": "prisma studio"
+    "db:studio": "prisma studio",
+    "auth:sync": "tsx scripts/sync-users-to-supabase.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.5.0",
     "@hookform/resolvers": "^5.4.0",
     "@prisma/adapter-pg": "^7.8.0",
     "@prisma/client": "^6.19.3",
+    "@supabase/ssr": "^0.10.3",
     "@supabase/supabase-js": "^2.106.1",
     "@tanstack/react-table": "^8.21.3",
     "bcryptjs": "^3.0.3",
-    "better-auth": "^1.6.11",
     "bwip-js": "^4.10.1",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
