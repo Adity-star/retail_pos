@@ -1,17 +1,22 @@
 // src/app/(dashboard)/purchase/page.tsx
 
-export default function PurchasePage() {
+import { getTenantContext } from '@/lib/tenant';
+import { PurchaseService } from '@/services/purchaseService';
+import { SupplierService } from '@/services/supplierService';
+import PurchaseHeader from '@/components/purchase/PurchaseHeader';
+import PurchaseList from '@/components/purchase/PurchaseList';
+
+export default async function PurchasePage() {
+  const { tenantId } = await getTenantContext();
+  const [purchases, suppliers] = await Promise.all([
+    PurchaseService.getPurchases(tenantId),
+    SupplierService.getSuppliers(tenantId),
+  ]);
+
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">Purchase Entry</h1>
-        <p className="text-sm text-gray-500 mt-1">
-          Record and manage purchase invoices
-        </p>
-      </div>
-      <div className="bg-white rounded-lg border border-gray-200 p-8 text-center">
-        <p className="text-gray-500">Coming in Phase 7 - Purchase Module</p>
-      </div>
+      <PurchaseHeader suppliers={suppliers} />
+      <PurchaseList initialPurchases={purchases} suppliers={suppliers} />
     </div>
   );
 }

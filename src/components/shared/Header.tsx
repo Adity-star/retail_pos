@@ -2,6 +2,7 @@
 
 'use client';
 
+// import { signOut } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import {
   DropdownMenu,
@@ -54,8 +55,8 @@ export default function Header({ user }: HeaderProps) {
 
         {/* User menu */}
         <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="flex items-center space-x-2">
+          <DropdownMenuTrigger aschild="true">
+            <div variant="ghost" className="flex items-center space-x-2">
               <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
                 <span className="text-white font-medium text-sm">
                   {user.name.charAt(0).toUpperCase()}
@@ -67,7 +68,7 @@ export default function Header({ user }: HeaderProps) {
                   {user.role.toLowerCase().replace('_', ' ')}
                 </p>
               </div>
-            </Button>
+            </div>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-56">
             <DropdownMenuLabel>

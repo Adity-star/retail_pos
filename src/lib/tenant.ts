@@ -4,7 +4,7 @@ import { headers } from 'next/headers';
 import { db } from './db';
 
 export async function getTenantContext() {
-  const headersList = headers();
+  const headersList = await headers();
   const tenantId = headersList.get('x-tenant-id');
   const userId = headersList.get('x-user-id');
   const userRole = headersList.get('x-user-role');

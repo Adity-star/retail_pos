@@ -2,7 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
 export async function middleware(request: NextRequest) {
-  const supabaseResponse = NextResponse.next({
+  const response = NextResponse.next({
     request,
   });
 
@@ -11,55 +11,54 @@ export async function middleware(request: NextRequest) {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
-        getAll() {
-          return request.cookies.getAll();
-        },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) => {
+        getAll: () => request.cookies.getAll(),
+        setAll: (cookies) => {
+          cookies.forEach(({ name, value, options }) => {
             request.cookies.set(name, value);
-            supabaseResponse.cookies.set(name, value, options);
+            response.cookies.set(name, value, options);
           });
         },
       },
     }
   );
 
-  // Refresh session automatically
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
   const pathname = request.nextUrl.pathname;
 
-  // Auth routes
   const authRoutes = ["/login"];
-  const isAuthRoute = authRoutes.some((route) => pathname.startsWith(route));
+  const isAuthRoute = authRoutes.some((r) => pathname.startsWith(r));
 
-  // Protected routes
   const protectedRoutes = ["/dashboard"];
-  const isProtectedRoute = protectedRoutes.some((route) =>
-    pathname.startsWith(route)
+  const isProtectedRoute = protectedRoutes.some((r) =>
+    pathname.startsWith(r)
   );
 
-  // Redirect to login if not authenticated and trying to access protected route
   if (!user && isProtectedRoute) {
-    const redirectUrl = new URL("/login", request.url);
-    return NextResponse.redirect(redirectUrl);
+    return NextResponse.redirect(new URL("/login", request.url));
   }
 
-  // Redirect to dashboard if authenticated and trying to access login
   if (user && isAuthRoute) {
-    const redirectUrl = new URL("/dashboard", request.url);
-    return NextResponse.redirect(redirectUrl);
+    return NextResponse.redirect(new URL("/dashboard", request.url));
   }
 
-  return supabaseResponse;
-}
+  // 🔥 ADD THIS: inject tenant/user context into request headers
+  const requestHeaders = new Headers(request.headers);
 
-export const config = {
-  matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
-    "/login",
-    "/dashboard/:path*",
-  ],
-};
+  requestHeaders.set("x-user-id", user?.id ?? "");
+
+  // If you store tenant in metadata:
+  const tenantId = user?.user_metadata?.tenant_id;
+  const role = user?.user_metadata?.role;
+
+  if (tenantId) requestHeaders.set("x-tenant-id", tenantId);
+  if (role) requestHeaders.set("x-user-role", role);
+
+  return NextResponse.next({
+    request: {
+      headers: requestHeaders,
+    },
+  });
+}

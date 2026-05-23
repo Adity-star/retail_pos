@@ -21,7 +21,7 @@ export default async function DashboardLayout({
     <div className="h-screen flex overflow-hidden bg-gray-50">
       {/* Sidebar */}
       <Sidebar user={user} />
-      
+
       {/* Main content area */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Header */}
