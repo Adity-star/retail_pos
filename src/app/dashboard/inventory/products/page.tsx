@@ -1,16 +1,41 @@
-// src/app/(dashboard)/inventory/products/page.tsx
+// src/app/dashboard/inventory/products/page.tsx
 
-import { getTenantContext } from '@/lib/tenant';
-import { ProductService } from '@/services/productService';
-import { CategoryService } from '@/services/categoryService';
+import { requireUser } from '@/lib/auth/require-user';
+import { db } from '@/lib/db';
 import ProductsTable from '@/components/inventory/ProductsTable';
-import ProductsHeader from '@/components/inventory/ProductsHeader';
+import ProductsHeader from '@/components/inventory/ProductHeader';
+
+async function getProducts(tenantId: string) {
+  return await db.product.findMany({
+    where: {
+      tenantId,
+      isActive: true,
+    },
+    include: {
+      category: true,
+    },
+    orderBy: {
+      createdAt: 'desc',
+    },
+  });
+}
+
+async function getCategories(tenantId: string) {
+  return await db.category.findMany({
+    where: {
+      tenantId,
+    },
+    orderBy: {
+      name: 'asc',
+    },
+  });
+}
 
 export default async function ProductsPage() {
-  const { tenantId } = await getTenantContext();
+  const user = await requireUser();
   const [products, categories] = await Promise.all([
-    ProductService.getProducts(tenantId),
-    CategoryService.getCategories(tenantId),
+    getProducts(user.tenantId),
+    getCategories(user.tenantId),
   ]);
 
   return (
